@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Williams Syndrome Care Planner</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const { Calendar, Heart, Pill, TrendingUp, Users, FileText, Download, Upload, Plus, Edit, Trash2, Save, X } = lucide;
+
+        const WilliamsSyndromePlanner = () => {
+          const [activeTab, setActiveTab] = useState('overview');
+          const [childInfo, setChildInfo] = useState({
+            name: '',
+            birthDate: '',
+            diagnosis: '',
+            emergencyContact: '',
+            insurance: '',
+            physicianPrimary: '',
+            physicianCardio: ''
+          });
+
+          const [appointments, setAppointments] = useState([]);
+          const [medications, setMedications] = useState([]);
+          const [growthData, setGrowthData] = useState([]);
+          const [milestones, setMilestones] = useState([]);
+          const [dailyNotes, setDailyNotes] = useState([]);
+          const [emergencyInfo, setEmergencyInfo] = useState({
+            allergies: '',
+            medicalAlerts: '',
+            hospitalPreference: '',
+            insuranceInfo: ''
+          });
+
+          const [showForm, setShowForm] = useState({ type: '', isOpen: false, editIndex: -1 });
+          const [formData, setFormData] = useState({});
+
+          // Form handlers
+          const openForm = (type, editIndex = -1) => {
+            setShowForm({ type, isOpen: true, editIndex });
+            if (editIndex >= 0) {
+              switch (type) {
+                case 'appointment':
+                  setFormData(appointments[editIndex]);
+                  break;
+                case 'medication':
+                  setFormData(medications[editIndex]);
+                  break;
+                case 'growth':
+                  setFormData(growthData[editIndex]);
+                  break;
+                case 'milestone':
+                  setFormData(milestones[editIndex]);
+                  break;
+                case 'note':
+                  setFormData(dailyNotes[editIndex]);
+                  break;
+                default:
+                  setFormData({});
+              }
+            } else {
+              setFormData({});
+            }
+          };
+
+          const closeForm = () => {
+            setShowForm({ type: '', isOpen: false, editIndex: -1 });
+            setFormData({});
+          };
+
+          const saveFormData = () => {
+            const { type, editIndex } = showForm;
+            const timestamp = new Date().toISOString();
+            
+            switch (type) {
+              case 'appointment':
+                if (editIndex >= 0) {
+                  const updated = [...appointments];
+                  updated[editIndex] = { ...formData, lastModified: timestamp };
+                  setAppointments(updated);
+                } else {
+                  setAppointments([...appointments, { ...formData, id: Date.now(), created: timestamp }]);
+                }
+                break;
+              case 'medication':
+                if (editIndex >= 0) {
+                  const updated = [...medications];
+                  updated[editIndex] = { ...formData, lastModified: timestamp };
+                  setMedications(updated);
+                } else {
+                  setMedications([...medications, { ...formData, id: Date.now(), created: timestamp }]);
+                }
+                break;
+              case 'growth':
+                if (editIndex >= 0) {
+                  const updated = [...growthData];
+                  updated[editIndex] = { ...formData, lastModified: timestamp };
+                  setGrowthData(updated);
+                } else {
+                  setGrowthData([...growthData, { ...formData, id: Date.now(), created: timestamp }]);
+                }
+                break;
+              case 'milestone':
+                if (editIndex >= 0) {
+                  const updated = [...milestones];
+                  updated[editIndex] = { ...formData, lastModified: timestamp };
+                  setMilestones(updated);
+                } else {
+                  setMilestones([...milestones, { ...formData, id: Date.now(), created: timestamp }]);
+                }
+                break;
+              case 'note':
+                if (editIndex >= 0) {
+                  const updated = [...dailyNotes];
+                  updated[editIndex] = { ...formData, lastModified: timestamp };
+                  setDailyNotes(updated);
+                } else {
+                  setDailyNotes([...dailyNotes, { ...formData, id: Date.now(), created: timestamp }]);
+                }
+                break;
+            }
+            closeForm();
+          };
+
+          const deleteItem = (type, index) => {
+            switch (type) {
+              case 'appointment':
+                setAppointments(appointments.filter((_, i) => i !== index));
+                break;
+              case 'medication':
+                setMedications(medications.filter((_, i) => i !== index));
+                break;
+              case 'growth':
+                setGrowthData(growthData.filter((_, i) => i !== index));
+                break;
+              case 'milestone':
+                setMilestones(milestones.filter((_, i) => i !== index));
+                break;
+              case 'note':
+                setDailyNotes(dailyNotes.filter((_, i) => i !== index));
+                break;
+            }
+          };
+
+          // Data management
+          const exportData = () => {
+            const data = {
+              childInfo,
+              appointments,
+              medications,
+              growthData,
+              milestones,
+              dailyNotes,
+              emergencyInfo,
+              exportDate: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `williams-syndrome-planner-${childInfo.name || 'data'}-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+          };
+
+          const importData = (event) => {
+            const file = event.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                try {
+                  const data = JSON.parse(e.target.result);
+                  setChildInfo(data.childInfo || {});
+                  setAppointments(data.appointments || []);
+                  setMedications(data.medications || []);
+                  setGrowthData(data.growthData || []);
+                  setMilestones(data.milestones || []);
+                  setDailyNotes(data.dailyNotes || []);
+                  setEmergencyInfo(data.emergencyInfo || {});
+                  alert('Data imported successfully!');
+                } catch (error) {
+                  alert('Error importing data. Please check the file format.');
+                }
+              };
+              reader.readAsText(file);
+            }
+          };
+
+          const formatDate = (dateString) => {
+            return new Date(dateString).toLocaleDateString();
+          };
+
+          const getUpcomingAppointments = () => {
+            const now = new Date();
+            return appointments
+              .filter(apt => new Date(apt.date) >= now)
+              .sort((a, b) => new Date(a.date) - new Date(b.date))
+              .slice(0, 3);
+          };
+
+          const getCurrentMedications = () => {
+            return medications.filter(med => med.status === 'active');
+          };
+
+          const tabs = [
+            { id: 'overview', label: 'Overview', icon: FileText },
+            { id: 'appointments', label: 'Appointments', icon: Calendar },
+            { id: 'medications', label: 'Medications', icon: Pill },
+            { id: 'growth', label: 'Growth', icon: TrendingUp },
+            { id: 'milestones', label: 'Milestones', icon: Users },
+            { id: 'notes', label: 'Daily Notes', icon: FileText },
+            { id: 'emergency', label: 'Emergency Info', icon: Heart }
+          ];
+
+          return (
+            <div className="max-w-6xl mx-auto p-4 bg-gray-50 min-h-screen">
+              <div className="bg-white rounded-lg shadow-lg">
+                {/* Header */}
+                <div className="bg-blue-600 text-white p-6 rounded-t-lg">
+                  <h1 className="text-2xl font-bold mb-2">Williams Syndrome Care Planner</h1>
+                  <p className="text-blue-100">Comprehensive tracking for {childInfo.name || 'your child'}</p>
+                  
+                  {/* Data Management */}
+                  <div className="flex gap-4 mt-4">
+                    <button
+                      onClick={exportData}
+                      className="flex items-center gap-2 bg-blue-500 hover:bg-blue-400 px-4 py-2 rounded-lg text-sm transition-colors"
+                    >
+                      <Download size={16} />
+                      Export Data
+                    </button>
+                    <label className="flex items-center gap-2 bg-blue-500 hover:bg-blue-400 px-4 py-2 rounded-lg text-sm cursor-pointer transition-colors">
+                      <Upload size={16} />
+                      Import Data
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={importData}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Navigation */}
+                <div className="border-b overflow-x-auto">
+                  <div className="flex min-w-max">
+                    {tabs.map(tab => {
+                      const Icon = tab.icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className={`flex items-center gap-2 px-6 py-4 font-medium border-b-2 transition-colors whitespace-nowrap ${
+                            activeTab === tab.id
+                              ? 'border-blue-600 text-blue-600 bg-blue-50'
+                              : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50'
+                          }`}
+                        >
+                          <Icon size={18} />
+                          {tab.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  {activeTab === 'overview' && (
+                    <div className="space-y-6">
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div className="bg-gray-50 p-6 rounded-lg">
+                          <h3 className="font-semibold text-lg mb-4">Child Information</h3>
+                          <div className="space-y-3">
+                            <input
+                              type="text"
+                              placeholder="Child's Name"
+                              value={childInfo.name}
+                              onChange={(e) => setChildInfo({...childInfo, name: e.target.value})}
+                              className="w-full p-3 border rounded-lg"
+                            />
+                            <input
+                              type="date"
+                              placeholder="Birth Date"
+                              value={childInfo.birthDate}
+                              onChange={(e) => setChildInfo({...childInfo, birthDate: e.target.value})}
+                              className="w-full p-3 border rounded-lg"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Primary Physician"
+                              value={childInfo.physicianPrimary}
+                              onChange={(e) => setChildInfo({...childInfo, physicianPrimary: e.target.value})}
+                              className="w-full p-3 border rounded-lg"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Cardiologist"
+                              value={childInfo.physicianCardio}
+                              onChange={(e) => setChildInfo({...childInfo, physicianCardio: e.target.value})}
+                              className="w-full p-3 border rounded-lg"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="bg-blue-50 p-4 rounded-lg">
+                            <h4 className="font-semibold text-blue-800 mb-2">Upcoming Appointments</h4>
+                            {getUpcomingAppointments().length > 0 ? (
+                              getUpcomingAppointments().map((apt, index) => (
+                                <div key={index} className="text-sm text-blue-700 mb-1">
+                                  {formatDate(apt.date)} - {apt.type} with {apt.provider}
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-blue-600 text-sm">No upcoming appointments</p>
+                            )}
+                          </div>
+
+                          <div className="bg-green-50 p-4 rounded-lg">
+                            <h4 className="font-semibold text-green-800 mb-2">Current Medications</h4>
+                            {getCurrentMedications().length > 0 ? (
+                              getCurrentMedications().map((med, index) => (
+                                <div key={index} className="text-sm text-green-700 mb-1">
+                                  {med.name} - {med.dosage}
+                                </div>
+                              ))
+                            ) : (
+                              <p className="text-green-600 text-sm">No current medications</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-yellow-50 p-6 rounded-lg">
+                        <h3 className="font-semibold text-yellow-800 mb-3">Williams Syndrome Care Reminders</h3>
+                        <div className="grid md:grid-cols-2 gap-4 text-sm text-yellow-700">
+                          <div>
+                            <h4 className="font-medium mb-2">Medical Monitoring:</h4>
+                            <ul className="space-y-1">
+                              <li>• Regular cardiology check-ups</li>
+                              <li>• Blood pressure monitoring</li>
+                              <li>• Calcium level monitoring</li>
+                              <li>• Kidney function tests</li>
+                            </ul>
+                          </div>
+                          <div>
+                            <h4 className="font-medium mb-2">Development Support:</h4>
+                            <ul className="space-y-1">
+                              <li>• Speech therapy sessions</li>
+                              <li>• Occupational therapy</li>
+                              <li>• Physical therapy</li>
+                              <li>• Educational support planning</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'appointments' && (
+                    <div>
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold">Appointments</h2>
+                        <button
+                          onClick={() => openForm('appointment')}
+                          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <Plus size={18} />
+                          Add Appointment
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {appointments.length > 0 ? (
+                          appointments
+                            .sort((a, b) => new Date(b.date) - new Date(a.date))
+                            .map((apt, index) => (
+                              <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h3 className="font-medium">{apt.type}</h3>
+                                    <p className="text-gray-600">Date: {formatDate(apt.date)} at {apt.time}</p>
+                                    <p className="text-gray-600">Provider: {apt.provider}</p>
+                                    <p className="text-gray-600">Location: {apt.location}</p>
+                                    {apt.notes && <p className="text-gray-600 mt-2">Notes: {apt.notes}</p>}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => openForm('appointment', index)}
+                                      className="text-blue-600 hover:text-blue-800"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => deleteItem('appointment', index)}
+                                      className="text-red-600 hover:text-red-800"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No appointments recorded yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'medications' && (
+                    <div>
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold">Medications</h2>
+                        <button
+                          onClick={() => openForm('medication')}
+                          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <Plus size={18} />
+                          Add Medication
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {medications.length > 0 ? (
+                          medications.map((med, index) => (
+                            <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h3 className="font-medium">{med.name}</h3>
+                                  <p className="text-gray-600">Dosage: {med.dosage}</p>
+                                  <p className="text-gray-600">Frequency: {med.frequency}</p>
+                                  <p className="text-gray-600">Prescriber: {med.prescriber}</p>
+                                  <p className="text-gray-600">Status: 
+                                    <span className={`ml-1 px-2 py-1 rounded text-xs ${
+                                      med.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {med.status}
+                                    </span>
+                                  </p>
+                                  {med.notes && <p className="text-gray-600 mt-2">Notes: {med.notes}</p>}
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => openForm('medication', index)}
+                                    className="text-blue-600 hover:text-blue-800"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button
+                                    onClick={() => deleteItem('medication', index)}
+                                    className="text-red-600 hover:text-red-800"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No medications recorded yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'growth' && (
+                    <div>
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold">Growth Tracking</h2>
+                        <button
+                          onClick={() => openForm('growth')}
+                          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <Plus size={18} />
+                          Add Measurement
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {growthData.length > 0 ? (
+                          growthData
+                            .sort((a, b) => new Date(b.date) - new Date(a.date))
+                            .map((growth, index) => (
+                              <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h3 className="font-medium">Measurement from {formatDate(growth.date)}</h3>
+                                    <div className="grid grid-cols-2 gap-4 mt-2">
+                                      {growth.height && <p className="text-gray-600">Height: {growth.height}</p>}
+                                      {growth.weight && <p className="text-gray-600">Weight: {growth.weight}</p>}
+                                      {growth.headCircumference && <p className="text-gray-600">Head Circumference: {growth.headCircumference}</p>}
+                                      {growth.age && <p className="text-gray-600">Age: {growth.age}</p>}
+                                    </div>
+                                    {growth.notes && <p className="text-gray-600 mt-2">Notes: {growth.notes}</p>}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => openForm('growth', index)}
+                                      className="text-blue-600 hover:text-blue-800"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => deleteItem('growth', index)}
+                                      className="text-red-600 hover:text-red-800"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No growth measurements recorded yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'milestones' && (
+                    <div>
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold">Developmental Milestones</h2>
+                        <button
+                          onClick={() => openForm('milestone')}
+                          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <Plus size={18} />
+                          Add Milestone
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {milestones.length > 0 ? (
+                          milestones
+                            .sort((a, b) => new Date(b.date) - new Date(a.date))
+                            .map((milestone, index) => (
+                              <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h3 className="font-medium">{milestone.title}</h3>
+                                    <p className="text-gray-600">Date: {formatDate(milestone.date)}</p>
+                                    <p className="text-gray-600">Category: {milestone.category}</p>
+                                    <p className="text-gray-600">Age: {milestone.age}</p>
+                                    {milestone.description && <p className="text-gray-600 mt-2">Description: {milestone.description}</p>}
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => openForm('milestone', index)}
+                                      className="text-blue-600 hover:text-blue-800"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => deleteItem('milestone', index)}
+                                      className="text-red-600 hover:text-red-800"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No milestones recorded yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'notes' && (
+                    <div>
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold">Daily Notes</h2>
+                        <button
+                          onClick={() => openForm('note')}
+                          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          <Plus size={18} />
+                          Add Note
+                        </button>
+                      </div>
+
+                      <div className="space-y-4">
+                        {dailyNotes.length > 0 ? (
+                          dailyNotes
+                            .sort((a, b) => new Date(b.date) - new Date(a.date))
+                            .map((note, index) => (
+                              <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h3 className="font-medium">{formatDate(note.date)}</h3>
+                                    <p className="text-gray-600">Category: {note.category}</p>
+                                    <p className="text-gray-700 mt-2">{note.content}</p>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => openForm('note', index)}
+                                      className="text-blue-600 hover:text-blue-800"
+                                    >
+                                      <Edit size={16} />
+                                    </button>
+                                    <button
+                                      onClick={() => deleteItem('note', index)}
+                                      className="text-red-600 hover:text-red-800"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            ))
+                        ) : (
+                          <p className="text-gray-500 text-center py-8">No notes recorded yet.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 'emergency' && (
+                    <div>
+                      <h2 className="text-xl font-semibold mb-6">Emergency Information</h2>
+                      <div className="space-y-6">
+                        <div className="bg-red-50 p-6 rounded-lg">
+                          <h3 className="font-semibold text-red-800 mb-4">Critical Medical Information</h3>
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-red-700 mb-2">Allergies</label>
+                              <textarea
+                                value={emergencyInfo.allergies}
+                                onChange={(e) => setEmergencyInfo({...emergencyInfo, allergies: e.target.value})}
+                                className="w-full p-3 border rounded-lg"
+                                rows="3"
+                                placeholder="List any known allergies..."
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-red-700 mb-2">Medical Alerts</label>
+                              <textarea
+                                value={emergencyInfo.medicalAlerts}
+                                onChange={(e) => setEmergencyInfo({...emergencyInfo, medicalAlerts: e.target.value})}
+                                className="w-full p-3 border rounded-lg"
+                                rows="3"
+                                placeholder="Heart conditions, seizure history, etc..."
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-red-700 mb-2">Preferred Hospital</label>
+                              <input
+                                type="text"
+                                value={emergencyInfo.hospitalPreference}
+                                onChange={(e) => setEmergencyInfo({...emergencyInfo, hospitalPreference: e.target.value})}
+                                className="w-full p-3 border rounded-lg"
+                                placeholder="Preferred emergency hospital..."
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-red-700 mb-2">Insurance Information</label>
+                              <textarea
+                                value={emergencyInfo.insuranceInfo}
+                                onChange={(e) => setEmergencyInfo({...emergencyInfo, insuranceInfo: e.target.value})}
+                                className="w-full p-3 border rounded-lg"
+                                rows="3"
+                                placeholder="Insurance provider, policy number, group number..."
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Forms */}
+              {showForm.isOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                  <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">
+                        {showForm.editIndex >= 0 ? 'Edit' : 'Add'} {showForm.type.charAt(0).toUpperCase() + showForm.type.slice(1)}
+                      </h3>
+                      <button onClick={closeForm} className="text-gray-500 hover:text-gray-700">
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {showForm.type === 'appointment' && (
+                        <>
+                          <input
+                            type="text"
+                            placeholder="Appointment Type"
+                            value={formData.type || ''}
+                            onChange={(e) => setFormData({...formData, type: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="date"
+                            placeholder="Date"
+                            value={formData.date || ''}
+                            onChange={(e) => setFormData({...formData, date: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="time"
+                            placeholder="Time"
+                            value={formData.time || ''}
+                            onChange={(e) => setFormData({...formData, time: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Provider/Doctor"
+                            value={formData.provider || ''}
+                            onChange={(e) => setFormData({...formData, provider: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Location"
+                            value={formData.location || ''}
+                            onChange={(e) => setFormData({...formData, location: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <textarea
+                            placeholder="Notes"
+                            value={formData.notes || ''}
+                            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                            rows="3"
+                          />
+                        </>
+                      )}
+
+                      {showForm.type === 'medication' && (
+                        <>
+                          <input
+                            type="text"
+                            placeholder="Medication Name"
+                            value={formData.name || ''}
+                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Dosage"
+                            value={formData.dosage || ''}
+                            onChange={(e) => setFormData({...formData, dosage: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Frequency"
+                            value={formData.frequency || ''}
+                            onChange={(e) => setFormData({...formData, frequency: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Prescriber"
+                            value={formData.prescriber || ''}
+                            onChange={(e) => setFormData({...formData, prescriber: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <select
+                            value={formData.status || 'active'}
+                            onChange={(e) => setFormData({...formData, status: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          >
+                            <option value="active">Active</option>
+                            <option value="discontinued">Discontinued</option>
+                          </select>
+                          <textarea
+                            placeholder="Notes"
+                            value={formData.notes || ''}
+                            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                            rows="3"
+                          />
+                        </>
+                      )}
+
+                      {showForm.type === 'growth' && (
+                        <>
+                          <input
+                            type="date"
+                            placeholder="Date"
+                            value={formData.date || ''}
+                            onChange={(e) => setFormData({...formData, date: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Height (e.g., 36 inches)"
+                            value={formData.height || ''}
+                            onChange={(e) => setFormData({...formData, height: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Weight (e.g., 28 lbs)"
+                            value={formData.weight || ''}
+                            onChange={(e) => setFormData({...formData, weight: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Head Circumference"
+                            value={formData.headCircumference || ''}
+                            onChange={(e) => setFormData({...formData, headCircumference: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Age at measurement"
+                            value={formData.age || ''}
+                            onChange={(e) => setFormData({...formData, age: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <textarea
+                            placeholder="Notes"
+                            value={formData.notes || ''}
+                            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                            rows="3"
+                          />
+                        </>
+                      )}
+
+                      {showForm.type === 'milestone' && (
+                        <>
+                          <input
+                            type="text"
+                            placeholder="Milestone Title"
+                            value={formData.title || ''}
+                            onChange={(e) => setFormData({...formData, title: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <input
+                            type="date"
+                            placeholder="Date"
+                            value={formData.date || ''}
+                            onChange={(e) => setFormData({...formData, date: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <select
+                            value={formData.category || ''}
+                            onChange={(e) => setFormData({...formData, category: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          >
+                            <option value="">Select Category</option>
+                            <option value="Physical">Physical</option>
+                            <option value="Cognitive">Cognitive</option>
+                            <option value="Language">Language</option>
+                            <option value="Social">Social</option>
+                            <option value="Educational">Educational</option>
+                          </select>
+                          <input
+                            type="text"
+                            placeholder="Age when achieved"
+                            value={formData.age || ''}
+                            onChange={(e) => setFormData({...formData, age: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <textarea
+                            placeholder="Description"
+                            value={formData.description || ''}
+                            onChange={(e) => setFormData({...formData, description: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                            rows="3"
+                          />
+                        </>
+                      )}
+
+                      {showForm.type === 'note' && (
+                        <>
+                          <input
+                            type="date"
+                            placeholder="Date"
+                            value={formData.date || ''}
+                            onChange={(e) => setFormData({...formData, date: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          />
+                          <select
+                            value={formData.category || ''}
+                            onChange={(e) => setFormData({...formData, category: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                          >
+                            <option value="">Select Category</option>
+                            <option value="Behavior">Behavior</option>
+                            <option value="Health">Health</option>
+                            <option value="Development">Development</option>
+                            <option value="Education">Education</option>
+                            <option value="Therapy">Therapy</option>
+                            <option value="General">General</option>
+                          </select>
+                          <textarea
+                            placeholder="Note content"
+                            value={formData.content || ''}
+                            onChange={(e) => setFormData({...formData, content: e.target.value})}
+                            className="w-full p-3 border rounded-lg"
+                            rows="4"
+                          />
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3 mt-6">
+                      <button
+                        onClick={saveFormData}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex-1"
+                      >
+                        <Save size={16} />
+                        Save
+                      </button>
+                      <button
+                        onClick={closeForm}
+                        className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+        ReactDOM.render(<WilliamsSyndromePlanner />, document.getElementById('root'));
+    </script>
+</body>
+</html>
