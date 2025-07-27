@@ -4,13 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Williams Syndrome Care Planner</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+        }
+        .icon {
+            width: 1rem;
+            height: 1rem;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
     </style>
 </head>
 <body>
@@ -18,16 +29,115 @@
 
     <script type="text/babel">
         const { useState } = React;
-        const { Calendar, Heart, Pill, TrendingUp, Users, FileText, Download, Upload, Plus, Edit, Trash2, Save, X } = lucide;
+
+        // Simple icon components
+        const Calendar = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+        );
+
+        const Heart = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        );
+
+        const Pill = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <path d="M10.5 20.5a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z"></path>
+                <path d="m21.5 2.5-10 10"></path>
+            </svg>
+        );
+
+        const TrendingUp = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <polyline points="22,7 13.5,15.5 8.5,10.5 2,17"></polyline>
+                <polyline points="16,7 22,7 22,13"></polyline>
+            </svg>
+        );
+
+        const Users = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+        );
+
+        const FileText = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14,2 14,8 20,8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10,9 9,9 8,9"></polyline>
+            </svg>
+        );
+
+        const Download = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7,10 12,15 17,10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        );
+
+        const Upload = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17,8 12,3 7,8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+        );
+
+        const Plus = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+        );
+
+        const Edit = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+        );
+
+        const Trash2 = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <polyline points="3,6 5,6 21,6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+        );
+
+        const Save = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17,21 17,13 7,13 7,21"></polyline>
+                <polyline points="7,3 7,8 15,8"></polyline>
+            </svg>
+        );
+
+        const X = () => (
+            <svg className="icon" viewBox="0 0 24 24">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+        );
 
         const WilliamsSyndromePlanner = () => {
           const [activeTab, setActiveTab] = useState('overview');
           const [childInfo, setChildInfo] = useState({
             name: '',
             birthDate: '',
-            diagnosis: '',
-            emergencyContact: '',
-            insurance: '',
             physicianPrimary: '',
             physicianCardio: ''
           });
@@ -47,7 +157,6 @@
           const [showForm, setShowForm] = useState({ type: '', isOpen: false, editIndex: -1 });
           const [formData, setFormData] = useState({});
 
-          // Form handlers
           const openForm = (type, editIndex = -1) => {
             setShowForm({ type, isOpen: true, editIndex });
             if (editIndex >= 0) {
@@ -154,7 +263,6 @@
             }
           };
 
-          // Data management
           const exportData = () => {
             const data = {
               childInfo,
@@ -239,11 +347,11 @@
                       onClick={exportData}
                       className="flex items-center gap-2 bg-blue-500 hover:bg-blue-400 px-4 py-2 rounded-lg text-sm transition-colors"
                     >
-                      <Download size={16} />
+                      <Download />
                       Export Data
                     </button>
                     <label className="flex items-center gap-2 bg-blue-500 hover:bg-blue-400 px-4 py-2 rounded-lg text-sm cursor-pointer transition-colors">
-                      <Upload size={16} />
+                      <Upload />
                       Import Data
                       <input
                         type="file"
@@ -259,7 +367,7 @@
                 <div className="border-b overflow-x-auto">
                   <div className="flex min-w-max">
                     {tabs.map(tab => {
-                      const Icon = tab.icon;
+                      const IconComponent = tab.icon;
                       return (
                         <button
                           key={tab.id}
@@ -270,7 +378,7 @@
                               : 'border-transparent text-gray-600 hover:text-gray-800 hover:bg-gray-50'
                           }`}
                         >
-                          <Icon size={18} />
+                          <IconComponent />
                           {tab.label}
                         </button>
                       );
@@ -380,7 +488,7 @@
                           onClick={() => openForm('appointment')}
                           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                         >
-                          <Plus size={18} />
+                          <Plus />
                           Add Appointment
                         </button>
                       </div>
@@ -404,13 +512,13 @@
                                       onClick={() => openForm('appointment', index)}
                                       className="text-blue-600 hover:text-blue-800"
                                     >
-                                      <Edit size={16} />
+                                      <Edit />
                                     </button>
                                     <button
                                       onClick={() => deleteItem('appointment', index)}
                                       className="text-red-600 hover:text-red-800"
                                     >
-                                      <Trash2 size={16} />
+                                      <Trash2 />
                                     </button>
                                   </div>
                                 </div>
@@ -431,7 +539,7 @@
                           onClick={() => openForm('medication')}
                           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                         >
-                          <Plus size={18} />
+                          <Plus />
                           Add Medication
                         </button>
                       </div>
@@ -460,13 +568,13 @@
                                     onClick={() => openForm('medication', index)}
                                     className="text-blue-600 hover:text-blue-800"
                                   >
-                                    <Edit size={16} />
+                                    <Edit />
                                   </button>
                                   <button
                                     onClick={() => deleteItem('medication', index)}
                                     className="text-red-600 hover:text-red-800"
                                   >
-                                    <Trash2 size={16} />
+                                    <Trash2 />
                                   </button>
                                 </div>
                               </div>
@@ -487,7 +595,7 @@
                           onClick={() => openForm('growth')}
                           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                         >
-                          <Plus size={18} />
+                          <Plus />
                           Add Measurement
                         </button>
                       </div>
@@ -514,13 +622,13 @@
                                       onClick={() => openForm('growth', index)}
                                       className="text-blue-600 hover:text-blue-800"
                                     >
-                                      <Edit size={16} />
+                                      <Edit />
                                     </button>
                                     <button
                                       onClick={() => deleteItem('growth', index)}
                                       className="text-red-600 hover:text-red-800"
                                     >
-                                      <Trash2 size={16} />
+                                      <Trash2 />
                                     </button>
                                   </div>
                                 </div>
@@ -541,7 +649,7 @@
                           onClick={() => openForm('milestone')}
                           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                         >
-                          <Plus size={18} />
+                          <Plus />
                           Add Milestone
                         </button>
                       </div>
@@ -565,13 +673,13 @@
                                       onClick={() => openForm('milestone', index)}
                                       className="text-blue-600 hover:text-blue-800"
                                     >
-                                      <Edit size={16} />
+                                      <Edit />
                                     </button>
                                     <button
                                       onClick={() => deleteItem('milestone', index)}
                                       className="text-red-600 hover:text-red-800"
                                     >
-                                      <Trash2 size={16} />
+                                      <Trash2 />
                                     </button>
                                   </div>
                                 </div>
@@ -592,7 +700,7 @@
                           onClick={() => openForm('note')}
                           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                         >
-                          <Plus size={18} />
+                          <Plus />
                           Add Note
                         </button>
                       </div>
@@ -614,13 +722,13 @@
                                       onClick={() => openForm('note', index)}
                                       className="text-blue-600 hover:text-blue-800"
                                     >
-                                      <Edit size={16} />
+                                      <Edit />
                                     </button>
                                     <button
                                       onClick={() => deleteItem('note', index)}
                                       className="text-red-600 hover:text-red-800"
                                     >
-                                      <Trash2 size={16} />
+                                      <Trash2 />
                                     </button>
                                   </div>
                                 </div>
@@ -697,7 +805,7 @@
                         {showForm.editIndex >= 0 ? 'Edit' : 'Add'} {showForm.type.charAt(0).toUpperCase() + showForm.type.slice(1)}
                       </h3>
                       <button onClick={closeForm} className="text-gray-500 hover:text-gray-700">
-                        <X size={20} />
+                        <X />
                       </button>
                     </div>
 
@@ -927,7 +1035,7 @@
                         onClick={saveFormData}
                         className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex-1"
                       >
-                        <Save size={16} />
+                        <Save />
                         Save
                       </button>
                       <button
